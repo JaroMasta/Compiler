@@ -38,7 +38,7 @@ dokończyć ten słownik z tokenami, zrobić ten skaner przynajmniej dla operato
 
 ##
 
-example_input = "2+3*(76+8/3)+ 3*(9-3)"
+example_input = "2+3*(76+8/3)+ a3*(9-3)"
 
 #funkcja do pomijania spacji
 def clean_spaces(input):
@@ -63,86 +63,94 @@ def is_letter(char):
         if not is_digit(char):
             return False
     return True"""
-def is_integer(lexeme):
-    #if not lexeme[0] in ('-', '+') and not is_digit(lexeme[0]):
-    if not is_digit(lexeme[0]):
-        return False
-    for l in lexeme[1:]:
-        if not is_digit(l):
+def is_integer(line, start, end):
+    if not is_digit(line[start])
+      if line[start] in ('+', '-'):
+        if start > 0:
+          if line[start - 1] not in ('(', '/'):
             return False
+      else:
+        return False
+    for l in line[start + 1 : end + 1]:
+      if not is_digit(l):
+          return False
     return True
 
 #funkcja do sprawdzania czy token należy do słów kluczowych
-def is_ident(token):
-    return token in ["def", "return", "if", "else"];
+def is_keyword(token):
+    return token in ["def", "return", "if", "else"]
 
-value = {"+": ("Operator", "Plus"),
-         "-": ("Operator", "Minus"),
-         "*" : ("Operator", "Mnozenie"),
-         "/" : ("Operator", "Dzielenie"),
-         "(" : ("LPAREN", "Lewy nawias"),
-         ")" : ("RPAREN", "Prawy nawias"),
-         "{" : ("LBRACE", "Lewa klamra"),
-         "}" : ("RBRACE", "Prawa klamra"),
-         "=" : ("ASSIGNMENT", "Operator przypisania"),
-         "==" : ("COMPARISON", "Operator porównania"),
-         "!=" : ("COMPARISON", "Operator różności"),
-         "<" : ("COMPARISON", "Operator mniejszości"),
-         ">" : ("COMPARISON", "Operator większości"),
-         "<=" : ("COMPARISON", "Operator mniejszości równości"),
-         ">=" : ("COMPARISON", "Operator większości równości"),
-         "&&" : ("LOGICAL", "Operator logiczny and"),
-         "||" : ("LOGICAL", "Operator logiczny or")}
+value = {"+": ("Operator", "+"),
+         "-": ("Operator", "-"),
+         "*" : ("Operator", "*"),
+         "/" : ("Operator", "/"),
+         "(" : ("LPAREN", "("),
+         ")" : ("RPAREN", ")"),
+         "{" : ("LBRACE", "{"),
+         "}" : ("RBRACE", "}"),
+         "=" : ("ASSIGNMENT", "="),
+         "==" : ("COMPARISON", "=="),
+         "!=" : ("COMPARISON", "!="),
+         "<" : ("COMPARISON", "<"),
+         ">" : ("COMPARISON", ">"),
+         "<=" : ("COMPARISON", "<="),
+         ">=" : ("COMPARISON", ">="),
+         "&&" : ("LOGICAL", "&&"),
+         "||" : ("LOGICAL", "||")}
 
-def is_token(lexeme, letter_ind):
-  if lexeme in value:
-    (t1, t2) = value[lexeme]
+def is_token(line, start, end, letter_ind):
+  if line[start : end + 1] in value:
+    (t1, t2) = value[line[start : end + 1]]
     return [t1, t2, letter_ind]
   else:
     #return - zależy czy liczba, czy identyfikator?
-    if is_integer(lexeme):
-      return ["NUMBER", lexeme, letter_ind]
-    if is_ident(lexeme):
-      return ["IDENTIFIER", lexeme, letter_ind]
+    if is_integer(line, start, end):
+      return ["NUMBER", line[start : end + 1], letter_ind]
+    if is_keyword(line[start : end + 1]):
+      return ["IDENTIFIER", line[start : end + 1], letter_ind]
 
 def scanner(line, p):
   if p == len(line) - 1:
-    if is_token(line[p], p) is not None:
-      return is_token(line[p], p + 1)
+    if is_token(line, p, p, p) is not None:
+      return is_token(line, p, p, p + 1)
     else:
       #jak nie jest ani operatorem ani liczbą ani identifier to zwroc komunikat błędu
-      return ["ERROR", line[p], p + 1]
+      return [f"ERROR in column {p - 1}", line[p], p + 1]
   token_builder = ""
   token = False
   for letter_ind in range(p, len(line)):
-    if (token_builder + line[letter_ind]) not in value and not (is_integer(token_builder + line[letter_ind]) or is_ident(token_builder + line[letter_ind])) and token:
-      if is_token(token_builder, letter_ind) is not None:
-        return is_token(token_builder, letter_ind)
+    if (token_builder + line[letter_ind]) not in value and not (is_integer(line, p, letter_ind) or is_keyword(token_builder + line[letter_ind])) and token:
+      if is_token(line, p, letter_ind - 1, letter_ind) is not None:
+        return is_token(line, p, letter_ind - 1, letter_ind)
+      else:
+        #jak nie jest ani operatorem ani liczbą ani identifier to zwroc komunikat błędu
+        return [f"ERROR in column {p - 1}", token_builder, letter_ind]
 
     elif letter_ind < len(line):
       token_builder += line[letter_ind]
-      if letter_ind == len(line) - 1 and not token and (is_token(token_builder + line[letter_ind], letter_ind) in (None, False)):
+      if letter_ind == len(line) - 1 and not token and (is_token(line, p, letter_ind, letter_ind) in (None, False)):
         #jak nie jest ani operatorem ani liczbą ani identifier to zwroc komunikat błędu
-        return ["ERROR", token_builder, letter_ind + 1]
+        return [f"ERROR in column {p - 1}", token_builder, letter_ind + 1]
     else:
       #jak nie jest ani operatorem ani liczbą ani identifier to zwroc komunikat błędu
-      return ["ERROR", token_builder, letter_ind]
+      return [f"ERROR in column {p - 1}", token_builder, letter_ind]
 
-    if token_builder in value or (is_integer(token_builder) or is_ident(token_builder)):
-      token = True
+    if len(token_builder) > 0:
+      if token_builder in value or (is_integer(line, p, letter_ind) or is_keyword(token_builder)):
+        token = True
 
 # z stdin tak jak powinno być
 from sys import stdin
 
-for line in stdin:
+"""for line in stdin:
   line = clean_spaces(line)
   p = 0
   while p < len(line):
     kwp = scanner(line, p) # k - klucz, w- wartość, p - indeks początku skanowania linii
     print("   ", kwp[0], kwp[1])
-    p = kwp[2]
+    p = kwp[2]"""
 
-#nie z stdin tylko z zdefiniowamego stringa
+#nie z stdin tylko z zdefiniowanego stringa
 
 line = clean_spaces(example_input)
 p = 0
