@@ -64,7 +64,7 @@ def is_letter(char):
             return False
     return True"""
 def is_integer(line, start, end):
-    if not is_digit(line[start])
+    if not is_digit(line[start]):
       if line[start] in ('+', '-'):
         if start > 0:
           if line[start - 1] not in ('(', '/'):
@@ -115,7 +115,7 @@ def scanner(line, p):
       return is_token(line, p, p, p + 1)
     else:
       #jak nie jest ani operatorem ani liczbą ani identifier to zwroc komunikat błędu
-      return [f"ERROR in column {p - 1}", line[p], p + 1]
+      return [f"ERROR in column {p}", line[p], p + 1]
   token_builder = ""
   token = False
   for letter_ind in range(p, len(line)):
@@ -124,16 +124,16 @@ def scanner(line, p):
         return is_token(line, p, letter_ind - 1, letter_ind)
       else:
         #jak nie jest ani operatorem ani liczbą ani identifier to zwroc komunikat błędu
-        return [f"ERROR in column {p - 1}", token_builder, letter_ind]
+        return [f"ERROR in column {p}", token_builder, letter_ind]
 
     elif letter_ind < len(line):
       token_builder += line[letter_ind]
       if letter_ind == len(line) - 1 and not token and (is_token(line, p, letter_ind, letter_ind) in (None, False)):
         #jak nie jest ani operatorem ani liczbą ani identifier to zwroc komunikat błędu
-        return [f"ERROR in column {p - 1}", token_builder, letter_ind + 1]
+        return [f"ERROR in column {p}", token_builder, letter_ind + 1]
     else:
       #jak nie jest ani operatorem ani liczbą ani identifier to zwroc komunikat błędu
-      return [f"ERROR in column {p - 1}", token_builder, letter_ind]
+      return [f"ERROR in column {p}", token_builder, letter_ind]
 
     if len(token_builder) > 0:
       if token_builder in value or (is_integer(line, p, letter_ind) or is_keyword(token_builder)):
